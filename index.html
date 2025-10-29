@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic P2P Shooter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            background: linear-gradient(45deg, #0a0a2a, #1a1a4a, #2a2a6a);
+        }
+        
+        #stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Лобби */
+        #lobby {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        .lobby-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+        
+        .ship-selection {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .ship-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .ship-card:hover {
+            border-color: #4ecdc4;
+            transform: translateY(-5px);
+        }
+        
+        .ship-card.selected {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+        }
+        
+        .ship-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .ship-stats {
+            font-size: 0.8em;
+            color: #ccc;
+        }
+        
+        .stat-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 2px 0;
+            overflow: hidden;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            background: #4ecdc4;
+            border-radius: 2px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        /* Игровая зона */
+        #gameArea {
+            display: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        #gameUI {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .player-info {
+            margin: 5px 0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .health-bar {
+            width: 200px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        
+        #gameCode {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Анимированный фон -->
+    <canvas id="stars"></canvas>
+    
+    <div class="container">
+        <!-- Лобби -->
+        <div id="lobby">
+            <div class="lobby-content">
+                <h1>🚀 COSMIC P2P SHOOTER</h1>
+                <p>Выберите корабль и начните космическую битву!</p>
+                
+                <div class="ship-selection">
+                    <!-- Корабль 1: Скоростной -->
+                    <div class="ship-card" onclick="selectShip(0)">
+                        <div class="ship-icon">🚀</div>
+                        <h3>Стриж</h3>
+                        <div class="ship-stats">
+                            <div>Скорость: <div class="stat-bar"><div class="stat-fill" style="width: 90%"></div></div></div>
+                            <div>Атака: <div class="stat-bar"><div class="stat-fill" style="width: 60%"></div></div></div>
+                            <div>Защита: <div class="stat-bar"><div class="stat-fill" style="width: 40%"></div></div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Корабль 2: Сбалансированный -->
+                    <div class="ship-card" onclick="selectShip(1)">
+                        <div class="ship-icon">🛸</div>
+                        <h3>Гарпун</h3>
+                        <div class="ship-stats">
+                            <div>Скорость: <div class="stat-bar"><div class="stat-fill" style="width: 70%"></div></div></div>
+                            <div>Атака: <div class="stat-bar"><div class="stat-fill" style="width: 70%"></div></div></div>
+                            <div>Защита: <div class="stat-bar"><div class="stat-fill" style="width: 70%"></div></div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Корабль 3: Танк -->
+                    <div class="ship-card" onclick="selectShip(2)">
+                        <div class="ship-icon">🛰️</div>
+                        <h3>Титан</h3>
+                        <div class="ship-stats">
+                            <div>Скорость: <div class="stat-bar"><div class="stat-fill" style="width: 40%"></div></div></div>
+                            <div>Атака: <div class="stat-bar"><div class="stat-fill" style="width: 80%"></div></div></div>
+                            <div>Защита: <div class="stat-bar"><div class="stat-fill" style="width: 90%"></div></div></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <button onclick="createGame()">Создать битву</button>
+                    <button onclick="showJoinForm()">Присоединиться</button>
+                </div>
+                
+                <div id="joinForm" style="display: none; margin-top: 20px;">
+                    <input type="text" id="gameCodeInput" placeholder="Введите код битвы" 
+                           style="padding: 10px; border: none; border-radius: 5px; margin-right: 10px;">
+                    <button onclick="joinGame()">Войти в битву</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Игровая зона -->
+        <div id="gameArea">
+            <canvas id="gameCanvas" width="1200" height="800"></canvas>
+            
+            <div id="gameUI">
+                <h3>⚡ Статус битвы</h3>
+                <div id="player1Info" class="player-info">
+                    Игрок 1: <span id="p1Ship">-</span>
+                    <div class="health-bar"><div id="p1Health" class="health-fill" style="width: 100%"></div></div>
+                </div>
+                <div id="player2Info" class="player-info">
+                    Игрок 2: <span id="p2Ship">-</span>
+                    <div class="health-bar"><div id="p2Health" class="health-fill" style="width: 100%"></div></div>
+                </div>
+            </div>
+            
+            <div id="gameCode">
+                <strong>Код битвы:</strong><br>
+                <span id="gameCodeDisplay">-</span>
+            </div>
+            
+            <div class="controls-info">
+                <strong>Управление:</strong><br>
+                WASD - движение<br>
+                Space - стрельба<br>
+                Mouse - направление
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script>
+        // Анимированный фон звезд
+        class Starfield {
+            constructor() {
+                this.canvas = document.getElementById('stars');
+                this.ctx = this.canvas.getContext('2d');
+                this.stars = [];
+                this.resize();
+                this.init();
+                
+                window.addEventListener('resize', () => this.resize());
+            }
+            
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            
+            init() {
+                // Создаем звезды
+                for (let i = 0; i < 200; i++) {
+                    this.stars.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        size: Math.random() * 2 + 1,
+                        speed: Math.random() * 0.5 + 0.1,
+                        brightness: Math.random()
+                    });
+                }
+            }
+            
+            update() {
+                this.ctx.fillStyle = 'rgba(10, 10, 42, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.stars.forEach(star => {
+                    star.y += star.speed;
+                    if (star.y > this.canvas.height) {
+                        star.y = 0;
+                        star.x = Math.random() * this.canvas.width;
+                    }
+                    
+                    // Мерцание
+                    star.brightness += (Math.random() - 0.5) * 0.1;
+                    star.brightness = Math.max(0.3, Math.min(1, star.brightness));
+                    
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+                    this.ctx.beginPath();
+                    this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+            }
+        }
+
+        // Игровой движок
+        class CosmicShooter {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.peer = null;
+                this.conn = null;
+                this.gameId = null;
+                this.selectedShip = 0;
+                this.gameActive = false;
+                
+                this.players = {};
+                this.bullets = [];
+                this.particles = [];
+                
+                this.keys = {};
+                this.mouse = { x: 0, y: 0 };
+                
+                this.ships = [
+                    { name: 'Стриж', icon: '🚀', speed: 5, attack: 3, defense: 2, color: '#ff6b6b' },
+                    { name: 'Гарпун', icon: '🛸', speed: 4, attack: 4, defense: 4, color: '#4ecdc4' },
+                    { name: 'Титан', icon: '🛰️', speed: 2, attack: 5, defense: 6, color: '#45b7d1' }
+                ];
+                
+                this.init();
+            }
+            
+            init() {
+                // Обработчики ввода
+                document.addEventListener('keydown', (e) => this.keys[e.key.toLowerCase()] = true);
+                document.addEventListener('keyup', (e) => this.keys[e.key.toLowerCase()] = false);
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.mouse.x = e.clientX - rect.left;
+                    this.mouse.y = e.clientY - rect.top;
+                });
+                this.canvas.addEventListener('click', (e) => this.shoot());
+                
+                // Запуск игрового цикла
+                this.gameLoop();
+            }
+            
+            createGame() {
+                this.gameId = this.generateGameId();
+                this.peer = new Peer(this.gameId);
+                
+                this.peer.on('open', (id) => {
+                    this.showGameArea();
+                    document.getElementById('gameCodeDisplay').textContent = id;
+                    this.addPlayer(id, this.selectedShip, true);
+                });
+                
+                this.peer.on('connection', (conn) => {
+                    this.conn = conn;
+                    this.setupConnection();
+                });
+            }
+            
+            joinGame(gameId) {
+                this.gameId = gameId;
+                this.peer = new Peer();
+                
+                this.peer.on('open', (id) => {
+                    this.conn = this.peer.connect(gameId);
+                    this.setupConnection();
+                    this.showGameArea();
+                    document.getElementById('gameCodeDisplay').textContent = gameId;
+                });
+            }
+            
+            setupConnection() {
+                this.conn.on('open', () => {
+                    this.sendData({
+                        type: 'player_join',
+                        ship: this.selectedShip
+                    });
+                });
+                
+                this.conn.on('data', (data) => this.handleData(data));
+                this.conn.on('close', () => this.handleDisconnect());
+            }
+            
+            handleData(data) {
+                switch (data.type) {
+                    case 'player_join':
+                        this.addPlayer(data.playerId, data.ship, false);
+                        break;
+                    case 'player_update':
+                        this.updatePlayer(data.playerId, data);
+                        break;
+                    case 'bullet_create':
+                        this.createBullet(data);
+                        break;
+                    case 'player_hit':
+                        this.handlePlayerHit(data);
+                        break;
+                }
+            }
+            
+            addPlayer(id, shipIndex, isLocal) {
+                const ship = this.ships[shipIndex];
+                this.players[id] = {
+                    x: isLocal ? 100 : 1100,
+                    y: 400,
+                    ship: shipIndex,
+                    health: 100,
+                    maxHealth: 100,
+                    angle: 0,
+                    isLocal: isLocal
+                };
+                
+                this.updatePlayerUI();
+            }
+            
+            updatePlayer(id, data) {
+                if (this.players[id] && !this.players[id].isLocal) {
+                    this.players[id].x = data.x;
+                    this.players[id].y = data.y;
+                    this.players[id].angle = data.angle;
+                }
+            }
+            
+            update() {
+                // Обновление локального игрока
+                const localPlayer = Object.values(this.players).find(p => p.isLocal);
+                if (localPlayer) {
+                    // Движение
+                    if (this.keys['w']) localPlayer.y -= this.ships[localPlayer.ship].speed;
+                    if (this.keys['s']) localPlayer.y += this.ships[localPlayer.ship].speed;
+                    if (this.keys['a']) localPlayer.x -= this.ships[localPlayer.ship].speed;
+                    if (this.keys['d']) localPlayer.x += this.ships[localPlayer.ship].speed;
+                    
+                    // Ограничение в пределах canvas
+                    localPlayer.x = Math.max(0, Math.min(this.canvas.width, localPlayer.x));
+                    localPlayer.y = Math.max(0, Math.min(this.canvas.height, localPlayer.y));
+                    
+                    // Угол поворота к курсору
+                    localPlayer.angle = Math.atan2(this.mouse.y - localPlayer.y, this.mouse.x - localPlayer.x);
+                    
+                    // Отправка обновления противнику
+                    this.sendData({
+                        type: 'player_update',
+                        x: localPlayer.x,
+                        y: localPlayer.y,
+                        angle: localPlayer.angle
+                    });
+                }
+                
+                // Обновление пуль
+                this.bullets.forEach((bullet, index) => {
+                    bullet.x += Math.cos(bullet.angle) * bullet.speed;
+                    bullet.y += Math.sin(bullet.angle) * bullet.speed;
+                    
+                    // Проверка столкновений
+                    Object.keys(this.players).forEach(playerId => {
+                        const player = this.players[playerId];
+                        if (player.isLocal !== bullet.isLocal) {
+                            const dx = bullet.x - player.x;
+                            const dy = bullet.y - player.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance < 30) {
+                                // Попадание!
+                                this.handleHit(playerId, bullet);
+                                this.bullets.splice(index, 1);
+                            }
+                        }
+                    });
+                    
+                    // Удаление пуль за пределами экрана
+                    if (bullet.x < 0 || bullet.x > this.canvas.width || 
+                        bullet.y < 0 || bullet.y > this.canvas.height) {
+                        this.bullets.splice(index, 1);
+                    }
+                });
+            }
+            
+            shoot() {
+                const localPlayer = Object.values(this.players).find(p => p.isLocal);
+                if (localPlayer) {
+                    const bullet = {
+                        x: localPlayer.x,
+                        y: localPlayer.y,
+                        angle: localPlayer.angle,
+                        speed: 8,
+                        damage: this.ships[localPlayer.ship].attack * 10,
+                        isLocal: true
+                    };
+                    
+                    this.bullets.push(bullet);
+                    
+                    // Отправка пули противнику
+                    this.sendData({
+                        type: 'bullet_create',
+                        ...bullet
+                    });
+                }
+            }
+            
+            handleHit(playerId, bullet) {
+                const player = this.players[playerId];
+                if (player) {
+                    player.health -= bullet.damage / this.ships[player.ship].defense;
+                    player.health = Math.max(0, player.health);
+                    
+                    this.updatePlayerUI();
+                    
+                    // Отправка информации о попадании
+                    this.sendData({
+                        type: 'player_hit',
+                        playerId: playerId,
+                        damage: bullet.damage
+                    });
+                    
+                    if (player.health <= 0) {
+                        this.handlePlayerDeath(playerId);
+                    }
+                }
+            }
+            
+            handlePlayerDeath(playerId) {
+                // Перезапуск игрока
+                const player = this.players[playerId];
+                player.health = player.maxHealth;
+                player.x = player.isLocal ? 100 : 1100;
+                player.y = 400;
+                
+                this.updatePlayerUI();
+            }
+            
+            render() {
+                // Очистка canvas
+                this.ctx.fillStyle = 'rgba(10, 10, 42, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Отрисовка игроков
+                Object.values(this.players).forEach(player => {
+                    const ship = this.ships[player.ship];
+                    
+                    this.ctx.save();
+                    this.ctx.translate(player.x, player.y);
+                    this.ctx.rotate(player.angle);
+                    
+                    // Корабль
+                    this.ctx.fillStyle = ship.color;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(20, 0);
+                    this.ctx.lineTo(-15, -10);
+                    this.ctx.lineTo(-15, 10);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                    
+                    this.ctx.restore();
+                    
+                    // Хелсбар
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.fillRect(player.x - 25, player.y - 40, 50, 5);
+                    this.ctx.fillStyle = player.health > 30 ? '#4ecdc4' : '#ff6b6b';
+                    this.ctx.fillRect(player.x - 25, player.y - 40, 50 * (player.health / 100), 5);
+                });
+                
+                // Отрисовка пуль
+                this.bullets.forEach(bullet => {
+                    this.ctx.fillStyle = bullet.isLocal ? '#4ecdc4' : '#ff6b6b';
+                    this.ctx.beginPath();
+                    this.ctx.arc(bullet.x, bullet.y, 3, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+            }
+            
+            gameLoop() {
+                this.update();
+                this.render();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+            
+            sendData(data) {
+                if (this.conn && this.conn.open) {
+                    this.conn.send(data);
+                }
+            }
+            
+            updatePlayerUI() {
+                const players = Object.values(this.players);
+                if (players[0]) {
+                    document.getElementById('p1Ship').textContent = this.ships[players[0].ship].name;
+                    document.getElementById('p1Health').style.width = players[0].health + '%';
+                }
+                if (players[1]) {
+                    document.getElementById('p2Ship').textContent = this.ships[players[1].ship].name;
+                    document.getElementById('p2Health').style.width = players[1].health + '%';
+                }
+            }
+            
+            generateGameId() {
+                return Math.random().toString(36).substr(2, 6).toUpperCase();
+            }
+            
+            showGameArea() {
+                document.getElementById('lobby').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'block';
+                this.gameActive = true;
+            }
+        }
+
+        // Глобальные переменные
+        const starfield = new Starfield();
+        const game = new CosmicShooter();
+
+        // Анимация фона
+        function animateStars() {
+            starfield.update();
+            requestAnimationFrame(animateStars);
+        }
+        animateStars();
+
+        // Глобальные функции
+        function selectShip(index) {
+            document.querySelectorAll('.ship-card').forEach(card => card.classList.remove('selected'));
+            document.querySelectorAll('.ship-card')[index].classList.add('selected');
+            game.selectedShip = index;
+        }
+
+        function createGame() {
+            game.createGame();
+        }
+
+        function showJoinForm() {
+            document.getElementById('joinForm').style.display = 'block';
+        }
+
+        function joinGame() {
+            const code = document.getElementById('gameCodeInput').value.trim();
+            if (code) {
+                game.joinGame(code);
+            }
+        }
+
+        // Выбираем первый корабль по умолчанию
+        selectShip(0);
+    </script>
+</body>
+</html>
